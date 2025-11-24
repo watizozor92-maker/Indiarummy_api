@@ -207,7 +207,7 @@ class Game extends BaseController
             'timestamp' => Util::getTimestampMs(),
             'account' => $user_code,
             'game_id' => 419,
-            'credit_amount' => 12000.01,
+            'credit_amount' => 0,
             'currency_code' => '$',
             'language' => 'en',
             'callback_url' => 'http://127.0.0.1:7002/game/handleGameRecordtest'
@@ -659,10 +659,19 @@ class Game extends BaseController
     //lang(语言)
     private function launch($agency_uid, $agent_token, $user_code, $game_id, $user_balance, $currency_code, $lang = 'en', $callback_url = '') 
     {        
-        if(empty($agency_uid) || empty($agent_token) || empty($user_code) || $game_id == 0 || empty($user_balance))
+        if(empty($agency_uid) || empty($agent_token))
         {
-            return $this->backErr('Invalid params ', Game::ERROR_CODE_INVALID_PARAMS, true);
+            return $this->backErr('Invalid params agency_uid or agent_token'.empty($agency_uid), Game::ERROR_CODE_INVALID_PARAMS, true);
         }
+        if(empty($user_code))
+        {
+            return $this->backErr('Invalid params user_code', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        if($game_id == 0 || $user_balance < 0)
+        {
+            return $this->backErr('Invalid params game_id or balance', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        
         if(empty($lang))
         {
             $lang = 'en';
@@ -709,13 +718,14 @@ class Game extends BaseController
         $curl = new Curl();
         $result = $curl->channel_login($data);        
         if(!empty($result))
-        {
-            $retArr = json_decode($result, true);
+        {            
+            $retArr = json_decode($result, true);            
             if(isset($retArr['code']) && $retArr['code'] == 200)
             {
-                $cacheKey = md5($token.time());
+                $cacheKey = md5($token.time()); 
+                $retArr['gameid'] = $game_id;               
                 //有效时间5分钟
-                $this->redis->set("GAME_LAUNCH:".$cacheKey, $result, Game::EXPIRE_TIME);
+                $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($retArr), Game::EXPIRE_TIME);
                 
                 #保存uid
                 $uid = $this->getUserUID($agency_uid, $user_code);
@@ -733,7 +743,7 @@ class Game extends BaseController
                     $this->getAgencyIdByUid($uid);
                 }
                 $retData = [
-                    'launch_url' => $this->GAME_URL . 'launch/game?token=' . $cacheKey,
+                    'launch_url' => $this->GAME_URL . 'launch/game?token=' . $cacheKey."&gameid=".$game_id,
                 ];
                 // $retData = AESCrypto::encrypt_ecb(json_encode($retData), $agent_token);
                 return $this->backjson($retData);
@@ -816,7 +826,7 @@ class Game extends BaseController
                     "usericon" => "", 
                     "create_time" => time(), 
                     "username" => $username, 
-                    "playername" => $username, 
+                    "playername" => $account,
                     "red_envelope" => 0,
                     "level" => 1,
                     "levelexp" => 0,
