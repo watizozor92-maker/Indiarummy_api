@@ -21,7 +21,7 @@ class Game extends BaseController
     private $redis;    
     private $ip = '';
     private $common_key = 'game_api_service_common_key_2024';
-    private $GAME_URL = 'http://game.xx.com/';
+    private $GAME_URL = 'https://xyule.cyou/';
 
     const ERROR_CODE_SUCCESS                    = 0;
     const ERROR_CODE_INVALID_PARAMS             = 1;
@@ -38,7 +38,9 @@ class Game extends BaseController
     const ERROR_CODE_LAUNCH_GAME_FAILED         = 20;
     const ERROR_CODE_INVALID_PAYLOAD            = 21;
 
-    const EXPIRE_TIME                           = 3600;
+    const EXPIRE_TIME                           = 600;
+    const EXPIRE_TIME_USER_DATA                 = 3600;
+
     public function initialize()
     {
         // parent::initialize();
@@ -121,7 +123,7 @@ class Game extends BaseController
         Log::write('payload:'. $payload);
         Log::write('apikey:'. $apikey);
         $payload = AESCrypto::decrypt_ecb($payload, $apikey);
-        Log::write('decrypt payload:'. $payload);
+        Log::write('decrypt payload:'. $payload);        
         $payloadArr = json_decode($payload, true);
         if(empty($payloadArr))
         {
@@ -160,6 +162,22 @@ class Game extends BaseController
         {
             return $this->backErr('Invalid payload language ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
         }
+        
+    //    $clientInfo = [
+    //         'user' => $payloadArr['username'],
+    //         'client_uuid' => $payloadArr['clientuuid'],
+    //         'passwd' => $payloadArr['passwd'],
+    //         'bundleid' => 'com.yono.games.free.test',
+    //         't' => 7, // 暂定7，token验证
+    //         'phone' => 'api_web',
+    //         'gameid' => (int)$payloadArr['game_code'],
+    //         'token' => $payloadArr['token'],
+    //         'bwss' => 0,
+    //         'balance' => isset($payloadArr['user_balance']) ? (int)$payloadArr['user_balance'] : 0,
+    //         'app' => 7, // 都暂定 7
+    //         'callback_url' => $payloadArr['callback_url'],
+    //         'currency_code' => $payloadArr['currency_code']
+    //     ];
 
         return $this->launch(
             $payloadArr['agency_uid'],
@@ -203,14 +221,14 @@ class Game extends BaseController
     {
         $user_code = $this->request->get('user', 'test_101');
         $data = [
-            'agency_uid' => 'agency10000',
+            'agency_uid' => $this->request->get('agency', 'agency10000'),
             'timestamp' => Util::getTimestampMs(),
             'account' => $user_code,
-            'game_id' => 419,
-            'credit_amount' => 0,
+            'game_id' => $this->request->get('gameid', 696),
+            'credit_amount' => 100000,
             'currency_code' => '$',
             'language' => 'en',
-            'callback_url' => 'http://127.0.0.1:7002/game/handleGameRecordtest'
+            'callback_url' => $this->request->get('callback', 'http://127.0.0.1:7002/game/handleGameRecordtest'),
         ];
         $apikey = $this->getAgentApikey($data['agency_uid']);
         if(empty($apikey))
@@ -298,9 +316,11 @@ class Game extends BaseController
 
     public function handleGameRecordTest()
     {
+        Log::write('handleGameRecordTest:'.$this->request->contentType()." ispost:".$this->request->isPost());
         if ($this->request->isPost() && $this->request->contentType() == 'application/json') 
         {
             $content = $this->request->getContent();
+            
             $data = json_decode($content, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return $this->backErr('Invalid params:the request data must be json format', Game::ERROR_CODE_INVALID_PARAMS, true);
@@ -328,7 +348,11 @@ class Game extends BaseController
         Log::write('payload:'. $payload);
         Log::write('apikey:'. $apikey);
         $payload = AESCrypto::decrypt_ecb($payload, $apikey);
-        Log::write('decrypt payload:'. $payload);
+        Log::write('callbacktest sucess decrypt payload:'. $payload);       
+        $credit_amount = rand(100, 100000); 
+        $payload = ["credit_amount" => $credit_amount, "timestamp"=> Util::getTimestampMs()];
+        Log::write('callbacktest response:'. json_encode($payload));   
+        return $this->backJson(AESCrypto::encrypt_ecb(json_encode($payload), $apikey));
     }
     //创建用户 
     // agency_uid(代理商代码) 
@@ -437,7 +461,10 @@ class Game extends BaseController
         {
             return $this->backErr('Invalid payload page_no', Game::ERROR_CODE_INVALID_PAYLOAD, true);
         }
-        $agencyId = DChannelParter::where('agency_uid', $agency_uid);
+        $startTime = date('Y-m-d H:i:s', strtotime($payloadArr['from_date']));
+        $endTime = date('Y-m-d H:i:s', strtotime($payloadArr['to_date']));
+
+        $agencyId = $this->getAgencyIdByAgUid($agency_uid);
         
         $pageNo = max((int)$payloadArr['page_no'], 1);
         $pageSize = isset($payloadArr['page_size'])? (int)$payloadArr['page_size']: 10;
@@ -493,57 +520,74 @@ class Game extends BaseController
             exit;
         }
         $callback = $this->getUserCallback($uid);
+        Log::write('[handleGameRecord]uid:'.$uid.'callback'.$callback);
         if(empty($callback))
         {
             // http_response_code(500);
             Log::write('[handleGameRecord]getUserCallback:'. $callback);
             echo 'success';
             exit;
-        }        
-        $username = $this->getUserBindAgency($uid);
-        if(empty($callback))
+        }    
+        $username = $this->getUserBindAgency($uid);  
+        if(!$username)
         {
             // http_response_code(500);
-            Log::write('[handleGameRecord]getUserBindAgency:'. $username);
+            Log::write('[handleGameRecord]username:'. $username);
+            echo 'success';
+            exit;
+        }    
+        $auid = $this->getAgencyIdByUid($uid);        
+        if(!$auid)
+        {
+            // http_response_code(500);
+            Log::write('[handleGameRecord]auid:'. $uid);
+            echo 'success';
+            exit;
+        }   
+        $agencyUId = $this->getAgencyUidById($auid);
+        if(!$agencyUId)
+        {
+            // http_response_code(500);
+            Log::write('[handleGameRecord]agencyUId:'.$auid);
             echo 'success';
             exit;
         }
-        $agencyArr = explode("_", $username);
-        if(!isset($agencyArr[1]))
-        {
-            // http_response_code(500);
-            Log::write('[handleGameRecord]$username:'. $username);
-            echo 'success';
-            exit;
-        }  
-        $apikey = $this->getAgentApikey($agencyArr[0], $agencyArr[1]);
+        
+        $apikey = $this->getAgentApikey($agencyUId);
         if(empty($apikey))
         {
             http_response_code(500);
-            Log::write('[handleGameRecord]apikey:'. $apikey);
+            Log::write('[handleGameRecord]apikey:'. $agencyUId);
             echo 'success';
             exit;
         } 
         $timestamp = Util::getTimestampMs();
         $data = [
-            'serial_number' => $agencyArr[0],
+            'serial_number' => $issue,
             'currency_code' => $currency_code,
             'game_id' => $gameid,
-            'account' => $agencyArr[1],
+            'account' => $username,
             'win_amount' => $wincoin,
-            'betcoin' => $betcoin,
+            'bet_amount' => $betcoin,
             'timestamp' => $timestamp,
             'game_round' => $round,
         ];
-        $payload = ESCrypto::encrypt_ecb(json_encode($data), $apikey);
-        $back = curlPostJosn($callback, ['agency_uid'=>$agencyArr[0], 'timestamp' => $timestamp, 'payload' => $payload]);
+        $payload = AESCrypto::encrypt_ecb(json_encode($data), $apikey);
+        $back = curlPostJosn($callback, ['agency_uid'=>$agencyUId, 'timestamp' => $timestamp, 'payload' => $payload]);
+        Log::write('[handleGameRecord]curlPostJosn:'. $back);
         $backArr = json_decode($back, true);
-        if($backArr['code'] == '0' || $backArr['code'] == 0) {
+        if($backArr['code'] == '0' || $backArr['code'] == 0) 
+        {
+            if(isset($backArr['payload']))
+            {
+                $payload = AESCrypto::decrypt_ecb($backArr['payload'], $apikey);
+                $payloadArr = json_decode($payload, true);
+                Log::write('[handleGameRecord]curlPostJosn:'. $payload);
+            }
             echo 'success';
             exit;
         }
         http_response_code(500);
-        Log::write('[handleGameRecord]curlPostJosn:'. $back);
         echo 'fail';
         exit;
     }
@@ -562,7 +606,7 @@ class Game extends BaseController
         if(!empty($channelstr))
         {
             //#缓存代理token 1小时
-            $this->redis->set('channel:apikey:'.$agency_uid, $channelstr);
+            $this->redis->set('channel:apikey:'.$agency_uid, $channelstr, Game::EXPIRE_TIME_USER_DATA);
         }
         return $channelstr;
     }
@@ -608,7 +652,7 @@ class Game extends BaseController
         if($valuestr != null)
         {
             //#缓存回调 1小时
-            $this->redis->set("callback:".$uid, $valuestr);
+            $this->redis->set("callback:".$uid, $valuestr, Game::EXPIRE_TIME_USER_DATA);
         }
         return $valuestr;
     }
@@ -618,11 +662,11 @@ class Game extends BaseController
         $username = $this->redis->get("bind:agent:".$uid);
         if($username == null)
         {
-            $username = DUserBind::where('uid', $uid)->value('unionid');         
+            $username = DUserBind::where('uid', $uid)->value('nickname');         
         }
         if(!empty($username))
         {
-            $this->redis->get("bind:agent:".$uid);
+            $this->redis->set("bind:agent:".$uid, $username, Game::EXPIRE_TIME_USER_DATA);
         }
         return $username;
     }
@@ -634,11 +678,39 @@ class Game extends BaseController
         {
             $agencyId = DUser::where('uid', $uid)->value('channel_agency');
         }
-        if(!empty($agencyId))
+        if($agencyId && !empty($agencyId))
         {
-            $this->redis->set("bind:agencyid:".$uid, $agencyId);
+            $this->redis->set("bind:agencyid:".$uid, $agencyId, Game::EXPIRE_TIME_USER_DATA);
         }
         return $agencyId;
+    }
+
+    private function getAgencyUidById($id)
+    {
+        $agency_uid = $this->redis->get("agencyuid:".$id);
+        if($agency_uid == null)
+        {
+            $agency_uid = DChannelParter::where('id', $id)->value('agency_uid');
+        }
+        if($agency_uid && !empty($agency_uid))
+        {
+            $this->redis->set("agencyuid:".$id, $agency_uid, Game::EXPIRE_TIME_USER_DATA);
+        }
+        return $agency_uid;
+    }
+
+    private function getAgencyIdByAgUid($Agency_uid)
+    {
+        $agency_id = $this->redis->get("agencyid:".$Agency_uid);
+        if($agency_id == null)
+        {
+            $agency_id = DChannelParter::where('agency_uid', $Agency_uid)->value('id');
+        }
+        if($agency_id && !empty($agency_id))
+        {
+            $this->redis->set("agencyid:".$Agency_uid, $agency_id, Game::EXPIRE_TIME_USER_DATA);
+        }
+        return $agency_id;
     }
 
     private function genClientUUID($userfix)
@@ -713,10 +785,10 @@ class Game extends BaseController
             'platform' => 0,
             'ip' => $ip,
             'lang' => $lang,
-            'callback_url' => empty($callback_url) ? '':'http://127.0.0.1:7002/game/handleGameRecord'
+            'callback_url' => $callback_url
         ];
         $curl = new Curl();
-        $result = $curl->channel_login($data);        
+        $result = $curl->channel_login($data);
         if(!empty($result))
         {            
             $retArr = json_decode($result, true);            
@@ -725,25 +797,35 @@ class Game extends BaseController
                 $cacheKey = md5($token.time()); 
                 $retArr['gameid'] = $game_id;               
                 //有效时间5分钟
-                $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($retArr), Game::EXPIRE_TIME);
-                
+                $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($retArr), Game::EXPIRE_TIME);                
                 #保存uid
                 $uid = $this->getUserUID($agency_uid, $user_code);
                 if($this->redis->hget("d_user:".$uid, 'status') == null)
                 {
                     $this->redis->hset("data_change:".$uid, 'd_user', 1);
                 }
-                #保存回调
-                // if(!empty($callback_url))
                 // Log::write('launch:'. $uid."  ".$callback_url);
+                #保存回调
+                //           
                 {
-                    DUserBind::update(['callback' => $callback_url], ['uid' => (int)$uid]);                    
-                    $this->redis->set("callback:".$uid, $callback_url);
+                    DUserBind::update(['callback' => $callback_url], ['uid' => (int)$uid]);        
+                    if(!empty($callback_url))            
+                        $this->redis->set("callback:".$uid, $callback_url, Game::EXPIRE_TIME_USER_DATA);
+                    else
+                        $this->redis->del("callback:".$uid);
                     $this->getUserBindAgency($uid);
-                    $this->getAgencyIdByUid($uid);
+                    $auid = $this->getAgencyIdByUid($uid);                    
+                    if(!$auid)
+                    {
+                        $auid = $this->getAgencyIdByAgUid($agency_uid);
+                        if($auid && !empty($auid))
+                            DUser::where('uid', $uid)->save(['channel_agency' => $auid]);
+                    }
+                    $this->getAgencyUidById($auid);
+                    
                 }
                 $retData = [
-                    'launch_url' => $this->GAME_URL . 'launch/game?token=' . $cacheKey."&gameid=".$game_id,
+                    'launch_url' => $this->GAME_URL . '?token=' . $cacheKey."&gameid=".$game_id,
                 ];
                 // $retData = AESCrypto::encrypt_ecb(json_encode($retData), $agent_token);
                 return $this->backjson($retData);
@@ -778,7 +860,7 @@ class Game extends BaseController
         {
             return [
                 'code' => Game::ERROR_CODE_USER_ALREADY_EXIST,
-                'msg' => 'Invalid user info ',
+                'msg' => 'user info already exists',
             ];
         }
         //请求api_swoole_server创建用户
@@ -810,7 +892,7 @@ class Game extends BaseController
                 [
                     'uid'=> $accountArr['id'],
                     'unionid' => $username,
-                    'nickname' => $username,
+                    'nickname' => $account,
                     'sex' => 0,
                     'platform' => 0,
                     'create_time' => time(),

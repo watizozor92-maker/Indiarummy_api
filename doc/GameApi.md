@@ -1,11 +1,13 @@
 ### API 接口说明
 
+api地址 https://xyule.cyou:7002/
+
 ##### 申请到的ApiKey
   
 ```json
 agency_uid: "agency10000"
 api_key: "qa/Oc5kikI5BfM81BusHbKeSDVeLQBvsfUyaLzPsA+E="
-api_url : "http://43.128.206.225:7002/"
+api_url : "https://xyule.cyou:7002/"
 ```
 >   **提示: api_key 用于后续 API请求对payload 内容加解密,请妥善保管**
 
@@ -112,7 +114,14 @@ payload 字段:
 ---
 ##### 3. 进入游戏 - (前端)
 
-游戏服务器入口: **43.128.206.225:9959**
+游戏服务器入口: 
+ 1. http
+    * 登录账号 **43.128.206.225:9951**
+    * 连游戏服 **43.128.206.225:9959**
+ 2. https
+    * 登录账号 wss://xyule.cyou/login
+    * 连游戏服 wss://xyule.cyou/game
+    
 构造游戏登录协议:
 ```json
 {
