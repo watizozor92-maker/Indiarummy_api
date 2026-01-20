@@ -77,20 +77,154 @@ class Game extends BaseController
         }
         // 32字节的密钥
         $key = base64_encode(openssl_random_pseudo_bytes(32));
-        DChannelParter::create(
+        Db::startTrans();
+        $ret = DChannelParter::create(
             [
                 'agency_uid'=> $agency_uid,
                 'apikey' => $key,
             ]
         );
+        if(!$ret)
+        {
+            Db::rollback();
+            return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        //关联agent 账号-用于登录代理后台       
+        $salt = rand(111111,999999);
+        $params = array(
+            'username' => $post_param['username'],
+            'password' => md5(strtolower(trim($post_param['username'])).md5($password).$salt),
+            'nickname' => $post_param['nickname'],
+            'agentids' => trim($post_param['agent']),
+            'phone' => $post_param['phone'],
+            'remark' => $post_param['remark'],
+            'salt'=>  $salt,
+            'uid' => session('user_info.id'),
+            'create_time' => time(),
+            'status' => 1
+        );
+        $model = new \app\agent\model\AccountAgent();        
+        for($i = 0; $i < 3; $i++) 
+        {
+            $account = $model->where(['username'=>$params['username']])->find();
+            if(!$account)
+            {
+                break;
+            }
+            $params['username'] = $params['username'].rand(1,9);
+        }
+        
+        if($account) 
+        {
+            return $this->backErr('agency name is exist.', Game::ERROR_CODE_AGENT_ALREADY_EXIST, true);
+        }
+
+        $re = $model->save($params);
+        if($re)
+        {
+            Db::commit();
+        }
+        else
+        {
+            Db::rollback();
+            return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
         // $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc')); // 16字节的IV        
         return $this->backjson([
             'api_key' => $key
         ]);
     }
 
-    //启动游戏
     public function v1()
+    {
+        Log::write('[v1]contentType:'. $this->request->contentType());
+        Log::write('[v1]getContent:'. $this->request->getContent());
+        if ($this->request->isPost() && $this->request->contentType() == 'application/json') {
+            $content = $this->request->getContent();
+            $data = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $this->backErr('Invalid params:the request data must be json format', Game::ERROR_CODE_INVALID_PARAMS, true);
+                
+            } 
+            // 将JSON数据存储到POST参数中
+            $this->request->post($data);
+        }
+        if($this->request->isPost())
+        {
+            $agency_uid = $this->request->post('agency_uid', "");            
+            $timestamp = $this->request->post('timestamp', 0);            
+            $payload = $this->request->post('payload', "");            
+        }
+        if(empty($agency_uid) || $timestamp  == 0  ||empty($payload))
+        {
+            return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        $apikey = $this->getAgentApikey($agency_uid);
+        if(empty($apikey))
+        {
+            return $this->backErr('Invalid channel info ', Game::ERROR_CODE_INVALID_CHANNEL_INFO, true);
+        }
+        if(empty($apikey))
+        {
+            return $this->backErr('Invalid channel info ', Game::ERROR_CODE_INVALID_CHANNEL_INFO, true);
+        }
+        //AES解密
+        Log::write('payload:'. $payload);
+        Log::write('apikey:'. $apikey);
+        $payload = AESCrypto::decrypt_ecb($payload, $apikey);
+        Log::write('decrypt payload:'. $payload);        
+        $payloadArr = json_decode($payload, true);
+        if(empty($payloadArr))
+        {
+            return $this->backErr('Invalid payload data ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['agency_uid']) || $payloadArr['agency_uid'] != $agency_uid)
+        {
+            return $this->backErr('Invalid payload agency_uid ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(strlen((string)$timestamp) >= 13)
+        {
+            $timestamp /= 1000;
+        }
+        //误差不能超过1天
+        if(!isset($payloadArr['timestamp']) || abs($timestamp - time()) > 86400)
+        {
+            return $this->backErr('Invalid payload timestamp ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['account']))
+        {
+            return $this->backErr('Invalid payload account ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['game_id']))
+        {
+            return $this->backErr('Invalid payload game_id ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['credit_amount']))
+        {
+            return $this->backErr('Invalid payload credit_amount ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['currency_code']))
+        {
+            return $this->backErr('Invalid payload currency_code ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['language']))
+        {
+            return $this->backErr('Invalid payload language ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        return $this->launchv2(
+            $payloadArr['agency_uid'],
+            $apikey,
+            $payloadArr['account'],
+            isset($payloadArr['game_id']) ? $payloadArr['game_id'] : 0,
+            $payloadArr['credit_amount'],
+            $payloadArr['currency_code'],
+            $payloadArr['language'],            
+            isset($payloadArr['callback_url']) ? $payloadArr['callback_url']: ""           
+        );
+    }
+
+    //启动游戏
+    public function v2()
     {
         Log::write('[v1]contentType:'. $this->request->contentType());
         Log::write('[v1]getContent:'. $this->request->getContent());
@@ -228,7 +362,7 @@ class Game extends BaseController
             'credit_amount' => 100000,
             'currency_code' => '$',
             'language' => 'en',
-            'callback_url' => $this->request->get('callback', 'http://127.0.0.1:7002/game/handleGameRecordtest'),
+            'callback_url' => $this->request->get('callback', 'https://xyule.cyou:7002/game/handleGameRecordtest'),
         ];
         $apikey = $this->getAgentApikey($data['agency_uid']);
         if(empty($apikey))
@@ -833,6 +967,111 @@ class Game extends BaseController
         }
         Log::write('data:'. $result);
         return $this->backErr("launch game failed", Game::ERROR_CODE_LAUNCH_GAME_FAILED, true);
+    }
+
+    private function launchv2($agency_uid, $agent_token, $user_code, $game_id, $user_balance, $currency_code, $lang = 'en', $callback_url = '') 
+    {        
+        if(empty($agency_uid) || empty($agent_token))
+        {
+            return $this->backErr('Invalid params agency_uid or agent_token'.empty($agency_uid), Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        if(empty($user_code))
+        {
+            return $this->backErr('Invalid params user_code', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        if($game_id == 0 || $user_balance < 0)
+        {
+            return $this->backErr('Invalid params game_id or balance', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        
+        if(empty($lang))
+        {
+            $lang = 'en';
+        }        
+        $token = $this->getUserToken($agency_uid, $user_code);
+        if(empty($token))
+        {
+            //自动创建
+            $result = $this->doCreateAccount($agency_uid, $agent_token, $user_code);
+            if($result['code'] != 0)
+            {
+                header('Content-type:application/json');
+                echo json_encode($result);
+                exit;
+            }
+            $token = $this->getUserToken($agency_uid, $user_code);
+            Log::write('token:'. $token);
+            if(empty($token))
+            {
+                $token = $result['data']['token'];
+                Log::write('token1:'. $token);
+            }            
+            // return $this->backErr('Invalid user info ', Game::ERROR_CODE_INVALID_USER_INFO, true);
+        }
+        $username = $this->genUserName($agency_uid, $user_code);
+        $ip = Request::ip();        
+        $data = [
+            'app' => 7,
+            't' => 7,
+            'bundleid' => 'com.yono.games.free.test',
+            'passwd' => md5($username.'_'.$this->common_key),
+            'user' => $username,
+            'gameid' => $game_id,
+            'bwss' => 0,
+            'token' => $token,
+            'platform' => 0,
+            'ip' => $ip,
+            'lang' => $lang,
+            'language' => 2,
+            'balance' => $user_balance,
+            'clientuuid' => $username,
+            'callback_url' => $callback_url,
+            'currency_code' => $currency_code,//货币            
+            'agency_uid' => $agency_uid,
+            'agent_token' => $agent_token,
+            'game_type' => 'slots',//暂时写死            
+        ];
+       
+        $cacheKey = md5($token.time());            
+        //有效时间5分钟
+        $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($data), Game::EXPIRE_TIME);                
+        #保存uid
+        $uid = $this->getUserUID($agency_uid, $user_code);
+        if(empty($uid))
+        {
+            return $this->backErr("launch game failed", Game::ERROR_CODE_LAUNCH_GAME_FAILED, true);
+        }
+        if($this->redis->hget("d_user:".$uid, 'status') == null)
+        {
+            $this->redis->hset("data_change:".$uid, 'd_user', 1);
+        }
+        // Log::write('launch:'. $uid."  ".$callback_url);
+        #保存回调
+        //
+        {
+            DUserBind::update(['callback' => $callback_url], ['uid' => (int)$uid]);        
+            if(!empty($callback_url))            
+                $this->redis->set("callback:".$uid, $callback_url, Game::EXPIRE_TIME_USER_DATA);
+            else
+                $this->redis->del("callback:".$uid);
+            $this->getUserBindAgency($uid);
+            $auid = $this->getAgencyIdByUid($uid);                    
+            if(!$auid)
+            {
+                $auid = $this->getAgencyIdByAgUid($agency_uid);
+                if($auid && !empty($auid))
+                    DUser::where('uid', $uid)->save(['channel_agency' => $auid]);
+            }
+            $this->getAgencyUidById($auid);
+            
+        }
+        //设置金币余额
+        //$this->redis->hset("d_user:".$uid, 'coin', $user_balance);
+        $retData = [
+            'launch_url' => $this->GAME_URL . '?token=' . $cacheKey."&gameid=".$game_id,
+        ];
+        // $retData = AESCrypto::encrypt_ecb(json_encode($retData), $agent_token);
+        return $this->backjson($retData);
     }
 
     private function createAccountBySwoole($agency_uid, $agent_token, $user_code)
