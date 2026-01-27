@@ -168,7 +168,7 @@ abstract class BaseController
     protected function getRedisObj()
     {
         if(!$this->redis_instance) {
-            file_put_contents('/tmp/test.log', 'aaaa'. PHP_EOL, FILE_APPEND);
+            // file_put_contents('/tmp/test.log', 'aaaa'. PHP_EOL, FILE_APPEND);
             $this->redis_instance = new \Redis();
             $this->redis_instance->connect(Env::get('redis.hostname'), intval(Env::get('redis.port', 6379)));
             $this->redis_instance->auth(Env::get('redis.password'));

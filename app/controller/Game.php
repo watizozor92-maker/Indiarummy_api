@@ -1029,12 +1029,14 @@ class Game extends BaseController
             'currency_code' => $currency_code,//货币            
             'agency_uid' => $agency_uid,
             'agent_token' => $agent_token,
-            'game_type' => 'slots',//暂时写死            
+            'game_type' => 'slots',//暂时写死
         ];
        
         $cacheKey = md5($token.time());            
         //有效时间5分钟
-        $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($data), Game::EXPIRE_TIME);                
+        $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($data), Game::EXPIRE_TIME);   
+        $this->redis->hset("GAME_SESSION:TOKEN", $token, $cacheKey);   
+
         #保存uid
         $uid = $this->getUserUID($agency_uid, $user_code);
         if(empty($uid))
