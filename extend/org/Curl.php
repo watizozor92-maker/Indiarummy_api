@@ -927,4 +927,17 @@ class Curl
         $_result = $this->simple_post($this->_game_server_host.'?mod=channellogin', $data, ['PORT'=> $this->_game_server_port, 'TIMEOUT'=> 120]);        
         return $_result;
     }
+
+    public function sync_coin($uid, $addr, $agency_uid, $credit_amount, $currency_code)
+    {
+        $_result = $this->simple_get($this->_game_server_host.
+        "?mod=coin&act=add&uid={$uid}&coin={$credit_amount}&ipaddr={$addr}&agency_uid={$agency_uid}&currency_code={$currency_code}&type=RECHARGE_API&remark={$agency_uid}|{$currency_code}", 
+        '', ['PORT'=> $this->_game_server_port, 'TIMEOUT'=> 30]);
+        
+        if ($_result  == 'succ')
+        {
+            return true;
+        }
+        return false;
+    }
 }

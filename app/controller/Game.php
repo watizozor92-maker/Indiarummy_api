@@ -325,6 +325,115 @@ class Game extends BaseController
         );
     }
 
+    public function genSyncCoin()
+    {
+        $user_code = $this->request->get('user', 'test_101');
+        $data = [
+            'agency_uid' => $this->request->get('agency', 'agency10000'),
+            'timestamp' => Util::getTimestampMs(),
+            'account' => $user_code,
+            'credit_amount' => $this->request->get('coin', 696),
+            'currency_code' => '$',
+            'language' => 'en',
+        ];
+        $apikey = $this->getAgentApikey($data['agency_uid']);
+        if(empty($apikey))
+        {
+            return $this->backErr('Invalid params', Game::ERROR_CODE_INVALID_CHANNEL_INFO, true);
+        }
+        //AES解密
+        $payload = AESCrypto::encrypt_ecb(json_encode($data), $apikey);
+        header('Content-type:application/json');
+        echo json_encode([
+            'agency_uid' => $data['agency_uid'],
+            'timestamp' => $data['timestamp'],
+            'payload' => $payload,
+        ]);
+        // echo AESCrypto::decrypt_ecb($payload, $apikey);
+        exit;
+    }
+    public function syncCoin()
+    {
+        Log::write('[syncCoin]getContent:'. $this->request->getContent());
+        if ($this->request->isPost() && $this->request->contentType() == 'application/json') {
+            $content = $this->request->getContent();
+            $data = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return $this->backErr('Invalid params:the request data must be json format', Game::ERROR_CODE_INVALID_PARAMS, true);
+            } 
+            // 将JSON数据存储到POST参数中
+            $this->request->post($data);
+        }
+        if($this->request->isPost())
+        {
+            $agency_uid = $this->request->post('agency_uid', "");            
+            $timestamp = $this->request->post('timestamp', 0);            
+            $payload = $this->request->post('payload', "");            
+        }
+        if(empty($agency_uid) || $timestamp  == 0  ||empty($payload))
+        {
+            return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
+        }
+        $apikey = $this->getAgentApikey($agency_uid);
+        if(empty($apikey))
+        {
+            return $this->backErr('Invalid channel info ', Game::ERROR_CODE_INVALID_CHANNEL_INFO, true);
+        }
+        //AES解密
+        Log::write('payload:'. $payload);
+        Log::write('apikey:'. $apikey);
+        $payload = AESCrypto::decrypt_ecb($payload, $apikey);
+        Log::write('decrypt payload:'. $payload);        
+        $payloadArr = json_decode($payload, true);
+        if(empty($payloadArr))
+        {
+            return $this->backErr('Invalid payload data ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['agency_uid']) || $payloadArr['agency_uid'] != $agency_uid)
+        {
+            return $this->backErr('Invalid payload agency_uid ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(strlen((string)$timestamp) >= 13)
+        {
+            $timestamp /= 1000;
+        }
+        //误差不能超过1天
+        if(!isset($payloadArr['timestamp']) || abs($timestamp - time()) > 86400)
+        {
+            return $this->backErr('Invalid payload timestamp ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['account']))
+        {
+            return $this->backErr('Invalid payload account ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }       
+        if(!isset($payloadArr['credit_amount']))
+        {
+            return $this->backErr('Invalid payload credit_amount ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }
+        if(!isset($payloadArr['currency_code']))
+        {
+            return $this->backErr('Invalid payload currency_code ', Game::ERROR_CODE_INVALID_PAYLOAD, true);
+        }        
+        $user_code = $payloadArr['account'];
+        $username = $this->genUserName($agency_uid, $user_code);
+        $uid = $this->getUserUID($agency_uid, $user_code);
+        if(!$uid || empty($uid))
+        {
+            return $this->backErr("not exist user info ".$username, Game::ERROR_CODE_INVALID_USER_INFO, true);
+        }
+        $curl = new Curl();        
+        $result = $curl->sync_coin($uid, $this->request->ip(), $agency_uid, $payloadArr['credit_amount'], $payloadArr['currency_code']);
+        Log::write('sync_coin ret:'. $result);     
+        if($result)
+        {
+            return $this->backjson([
+                'code' => Game::ERROR_CODE_SUCCESS,
+                'msg' => 'success'
+            ]);
+        }
+        return $this->backErr('recharge failed', Game::ERROR_CODE_REQUST_SERVICE_ERROR, true);
+    }
+
     //token换连接信息
     public function session()
     {
@@ -857,6 +966,10 @@ class Game extends BaseController
         return $agency_uid.'_'.$user_code;
     }
 
+    private function getAgencyMaxCoin()
+    {
+        return 1000000000;
+    }
     //agency_uid(代理商代码) , 
     //agent_token(代理商密钥) , 
     //user_code(玩家id) , 
@@ -987,7 +1100,8 @@ class Game extends BaseController
         if(empty($lang))
         {
             $lang = 'en';
-        }        
+        }
+
         $token = $this->getUserToken($agency_uid, $user_code);
         if(empty($token))
         {
@@ -1204,4 +1318,6 @@ class Game extends BaseController
         ];
         return ['code' => 0, 'msg' => 'succ', 'data' => $ret];
     }
+
+    
 }
