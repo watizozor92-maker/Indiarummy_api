@@ -62,11 +62,14 @@ class Game extends BaseController
         if($this->request->isPost())
         {
             $agency_uid = $this->request->post('agency_uid', "");
+            $post_param =  $this->request->post();
         }
         else
         {
             $agency_uid = $this->request->get('agency_uid', "");
+            $post_param =  $this->request->get();
         }
+        
         if(empty($agency_uid))
         {
             return $this->backErr('Invalid params ', Game::ERROR_CODE_INVALID_PARAMS, true);
@@ -93,14 +96,14 @@ class Game extends BaseController
         //关联agent 账号-用于登录代理后台       
         $salt = rand(111111,999999);
         $params = array(
-            'username' => $post_param['username'],
-            'password' => md5(strtolower(trim($post_param['username'])).md5($password).$salt),
-            'nickname' => $post_param['nickname'],
-            'agentids' => trim($post_param['agent']),
-            'phone' => $post_param['phone'],
-            'remark' => $post_param['remark'],
+            'username' => $agency_uid ,
+            'password' => md5(strtolower(trim($agency_uid)).md5($password).$salt),
+            'nickname' => $agency_uid,
+            'agentids' => trim(''),
+            'phone' => '',
+            'remark' => '',
             'salt'=>  $salt,
-            'uid' => session('user_info.id'),
+            'uid' => 0,
             'create_time' => time(),
             'status' => 1
         );
