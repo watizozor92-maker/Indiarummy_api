@@ -94,49 +94,50 @@ class Game extends BaseController
             return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
         }
         //关联agent 账号-用于登录代理后台       
-        $salt = rand(111111,999999);
-        $params = array(
-            'username' => $agency_uid ,
-            'password' => md5(strtolower(trim($agency_uid)).md5('123456').$salt),
-            'nickname' => $agency_uid,
-            'agentids' => trim(''),
-            'phone' => '',
-            'remark' => '',
-            'salt'=>  $salt,
-            'uid' => 0,
-            'create_time' => time(),
-            'status' => 1
-        );
-        $model = new \app\agent\model\AccountAgent();        
-        for($i = 0; $i < 3; $i++) 
-        {
-            $account = $model->where(['username'=>$params['username']])->find();
-            if(!$account)
-            {
-                break;
-            }
-            $params['username'] = $params['username'].rand(1,9);
-        }
+        // $salt = rand(111111,999999);
+        // $params = array(
+        //     'username' => $agency_uid ,
+        //     'password' => md5(strtolower(trim($agency_uid)).md5('123456').$salt),
+        //     'nickname' => $agency_uid,
+        //     'agentids' => trim(''),
+        //     'phone' => '',
+        //     'remark' => '',
+        //     'salt'=>  $salt,
+        //     'uid' => 0,
+        //     'create_time' => time(),
+        //     'status' => 1
+        // );
+        // $model = new \app\model\AccountAgent();        
+        // for($i = 0; $i < 3; $i++) 
+        // {
+        //     $account = $model->where(['username'=>$params['username']])->find();
+        //     if(!$account)
+        //     {
+        //         break;
+        //     }
+        //     $params['username'] = $params['username'].rand(1,9);
+        // }
         
-        if($account) 
-        {
-            return $this->backErr('agency name is exist.', Game::ERROR_CODE_AGENT_ALREADY_EXIST, true);
-        }
+        // if($account) 
+        // {
+        //     return $this->backErr('agency name is exist.', Game::ERROR_CODE_AGENT_ALREADY_EXIST, true);
+        // }
 
-        $re = $model->save($params);
-        if($re)
-        {
-            Db::commit();
-        }
-        else
-        {
-            Db::rollback();
-            return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
-        }
+        // $re = $model->save($params);
+        // if($re)
+        // {
+        //     Db::commit();
+        // }
+        // else
+        // {
+        //     Db::rollback();
+        //     return $this->backErr('Invalid params: there are not required parameters', Game::ERROR_CODE_INVALID_PARAMS, true);
+        // }
         // $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc')); // 16字节的IV        
-        return $this->backjson([
-            'api_key' => $key
-        ]);
+        // return $this->backjson([
+        //     'api_key' => $key
+        // ]);
+        Db::commit();
     }
 
     public function v1()
