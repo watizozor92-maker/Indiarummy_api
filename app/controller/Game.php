@@ -97,7 +97,7 @@ class Game extends BaseController
         $salt = rand(111111,999999);
         $params = array(
             'username' => $agency_uid ,
-            'password' => md5(strtolower(trim($agency_uid)).md5($password).$salt),
+            'password' => md5(strtolower(trim($agency_uid)).md5('123456').$salt),
             'nickname' => $agency_uid,
             'agentids' => trim(''),
             'phone' => '',
