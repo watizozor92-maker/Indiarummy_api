@@ -8,6 +8,7 @@ use app\model\DChannelParter;
 use app\model\DUser;
 use app\model\DUserBind;
 use app\model\DDeskUser;
+use app\model\Language;
 
 use think\facade\Request;
 use think\facade\Log;
@@ -21,7 +22,7 @@ class Game extends BaseController
     private $redis;    
     private $ip = '';
     private $common_key = 'game_api_service_common_key_2024';
-    private $GAME_URL = 'https://xyule.cyou/';
+    private $GAME_URL = 'https://m.5k02.cyou/';
 
     const ERROR_CODE_SUCCESS                    = 0;
     const ERROR_CODE_INVALID_PARAMS             = 1;
@@ -137,8 +138,8 @@ class Game extends BaseController
 
     public function v1()
     {
-        Log::write('[v1]contentType:'. $this->request->contentType());
-        Log::write('[v1]getContent:'. $this->request->getContent());
+        // Log::write('[v1]contentType:'. $this->request->contentType());
+        // Log::write('[v1]getContent:'. $this->request->getContent());
         if ($this->request->isPost() && $this->request->contentType() == 'application/json') {
             $content = $this->request->getContent();
             $data = json_decode($content, true);
@@ -469,9 +470,9 @@ class Game extends BaseController
             'account' => $user_code,
             'game_id' => $this->request->get('gameid', 696),
             'credit_amount' => 100000,
-            'currency_code' => '$',
+            'currency_code' => 'en',
             'language' => 'en',
-            'callback_url' => $this->request->get('callback', 'https://xyule.cyou:7002/game/handleGameRecordtest'),
+            'callback_url' => $this->request->get('callback', 'https://api.5k02.cyou/game/handleGameRecordtest'),
         ];
         $apikey = $this->getAgentApikey($data['agency_uid']);
         if(empty($apikey))
@@ -1072,7 +1073,7 @@ class Game extends BaseController
                     
                 }
                 $retData = [
-                    'launch_url' => $this->GAME_URL . '?token=' . $cacheKey."&gameid=".$game_id,
+                    'launch_url' => $this->GAME_URL . '?token=' . $cacheKey."&gameid=".$game_id."&lang=".$lang,
                 ];
                 // $retData = AESCrypto::encrypt_ecb(json_encode($retData), $agent_token);
                 return $this->backjson($retData);
@@ -1184,7 +1185,7 @@ class Game extends BaseController
         //设置金币余额
         //$this->redis->hset("d_user:".$uid, 'coin', $user_balance);
         $retData = [
-            'launch_url' => $this->GAME_URL . '?token=' . $cacheKey."&gameid=".$game_id,
+            'launch_url' => $this->GAME_URL . '?token=' . $cacheKey."&gameid=".$game_id."&lang=".$lang,
         ];
         // $retData = AESCrypto::encrypt_ecb(json_encode($retData), $agent_token);
         return $this->backjson($retData);
