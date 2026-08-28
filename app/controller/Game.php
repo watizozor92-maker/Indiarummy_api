@@ -22,7 +22,7 @@ class Game extends BaseController
     private $redis;    
     private $ip = '';
     private $common_key = 'game_api_service_common_key_2024';
-    private $GAME_URL = 'https://m.5k02.cyou/';
+    private $GAME_URL = 'https://kjasdakls.shop/';
 
     const ERROR_CODE_SUCCESS                    = 0;
     const ERROR_CODE_INVALID_PARAMS             = 1;
@@ -472,7 +472,7 @@ class Game extends BaseController
             'credit_amount' => 100000,
             'currency_code' => 'en',
             'language' => 'en',
-            'callback_url' => $this->request->get('callback', 'https://api.5k02.cyou/game/handleGameRecordtest'),
+            'callback_url' => $this->request->get('callback', 'https://api.kjasdakls.shop/game/handleGameRecordtest'),
         ];
         $apikey = $this->getAgentApikey($data['agency_uid']);
         if(empty($apikey))
