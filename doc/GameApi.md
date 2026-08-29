@@ -85,7 +85,7 @@ payload 字段:
 |account|玩家用户名|String|是|
 |game_id|游戏ID-参见附录2|int|是|
 |credit_amount| 玩家余额|double|是|
-|currency_code|语言（参见附录2）|String|是|
+|currency_code|货币（参见附录4）|String|是|
 |language|语言（参见附录3）|String|是|
 |callback_url|注单回调地址|String|否|
 
@@ -156,7 +156,7 @@ payload 字段:
 | 参数      | 说明 |数据类型|必填|
 | ---- | ---- |---|---|
 |serial_number|记录唯一编号 |String|是|
-|currency_code|货币（参见附录）|String|是|
+|currency_code|货币（参见附录4）|String|是|
 |game_id|游戏ID-参见附录2|int|是|
 |account|玩家账号|String|是|
 |win_amount|赢的金额|String|是|
@@ -290,3 +290,40 @@ code - 错误码:
 |698|lampofaladdin          |slot|
 |699|Sphinx          |slot|
 
+
+
+#### 附录3
+语言,调用接口时,使用语言代码 (Language) 来指定语言
+
+| 语言标识 (Locale) | 语言代码 (Language) | 地区代码 (Region) | 显示名称 |
+| :--- | :--- | :--- | :--- |
+| **zh-CN** | zh | CN | 简体中文 |
+| **zh-TW** | zh | TW | 繁體中文 |
+| **zh-HK** | zh | HK | 繁體中文 (香港) |
+| **en-US** | en | US | English |
+| **en-GB** | en | GB | English (UK) |
+| **en-MY** | en | MY | English (Malaysia) |
+| **ja-JP** | ja | JP | 日本語 |
+| **ko-KR** | ko | KR | 한국어 |
+| **vi-VN** | vi | VN | Tiếng Việt |
+| **th-TH** | th | TH | ไทย |
+| **id-ID** | id | ID | Bahasa Indonesia |
+| **ms-MY** | ms | MY | Bahasa Melayu |
+
+#### 附录4
+货币,调用接口时,使用货币代码 (Currency Code) 来指定货币
+
+| 语言标识 (Locale) | 货币代码 (Currency Code) | 货币符号 (Symbol) | 显示名称 (Display Name) |
+| :--- | :--- | :--- | :--- |
+| **zh-CN** | CNY | ¥ | 人民币 (Renminbi) |
+| **zh-TW** | TWD | NT$ | 新台币 (New Taiwan Dollar) |
+| **zh-HK** | HKD | HK$ | 港币 (Hong Kong Dollar) |
+| **en-US** | USD | $ | 美元 (US Dollar) |
+| **en-GB** | GBP | £ | 英镑 (British Pound) |
+| **en-MY** | MYR | RM | 马来西亚林吉特 (Malaysian Ringgit) |
+| **ja-JP** | JPY | ¥ | 日元 (Japanese Yen) |
+| **ko-KR** | KRW | ₩ | 韩元 (South Korean Won) |
+| **vi-VN** | VND | ₫ | 越南盾 (Vietnamese Dong) |
+| **th-TH** | THB | ฿ | 泰铢 (Thai Baht) |
+| **id-ID** | IDR | Rp | 印尼盾 (Indonesian Rupiah) |
+| **ms-MY** | MYR | RM | 马来西亚林吉特 (Malaysian Ringgit) |

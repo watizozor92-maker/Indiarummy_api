@@ -229,7 +229,7 @@ Content-Type:   application/json</p>
 </tr>
 <tr>
 <td>currency_code</td>
-<td>语言（参见附录2）</td>
+<td>货币（参见附录4）</td>
 <td>String</td>
 <td>是</td>
 </tr>
@@ -374,7 +374,7 @@ Content-Type:   application/json</p>
 </tr>
 <tr>
 <td>currency_code</td>
-<td>货币（参见附录）</td>
+<td>货币（参见附录4）</td>
 <td>String</td>
 <td>是</td>
 </tr>
@@ -762,6 +762,178 @@ Content-Type:   application/json</p>
 <td>699</td>
 <td>Sphinx</td>
 <td>slot</td>
+</tr>
+</tbody>
+</table>
+<h4 id="附录3">附录3 </h4>
+<p>语言,调用接口时,使用语言代码 (Language) 来指定语言</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">语言标识 (Locale)</th>
+<th style="text-align:left">语言代码 (Language)</th>
+<th style="text-align:left">地区代码 (Region)</th>
+<th style="text-align:left">显示名称</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>zh-CN</strong></td>
+<td style="text-align:left">zh</td>
+<td style="text-align:left">CN</td>
+<td style="text-align:left">简体中文</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>zh-TW</strong></td>
+<td style="text-align:left">zh</td>
+<td style="text-align:left">TW</td>
+<td style="text-align:left">繁體中文</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>zh-HK</strong></td>
+<td style="text-align:left">zh</td>
+<td style="text-align:left">HK</td>
+<td style="text-align:left">繁體中文 (香港)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>en-US</strong></td>
+<td style="text-align:left">en</td>
+<td style="text-align:left">US</td>
+<td style="text-align:left">English</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>en-GB</strong></td>
+<td style="text-align:left">en</td>
+<td style="text-align:left">GB</td>
+<td style="text-align:left">English (UK)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>en-MY</strong></td>
+<td style="text-align:left">en</td>
+<td style="text-align:left">MY</td>
+<td style="text-align:left">English (Malaysia)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>ja-JP</strong></td>
+<td style="text-align:left">ja</td>
+<td style="text-align:left">JP</td>
+<td style="text-align:left">日本語</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>ko-KR</strong></td>
+<td style="text-align:left">ko</td>
+<td style="text-align:left">KR</td>
+<td style="text-align:left">한국어</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>vi-VN</strong></td>
+<td style="text-align:left">vi</td>
+<td style="text-align:left">VN</td>
+<td style="text-align:left">Tiếng Việt</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>th-TH</strong></td>
+<td style="text-align:left">th</td>
+<td style="text-align:left">TH</td>
+<td style="text-align:left">ไทย</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>id-ID</strong></td>
+<td style="text-align:left">id</td>
+<td style="text-align:left">ID</td>
+<td style="text-align:left">Bahasa Indonesia</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>ms-MY</strong></td>
+<td style="text-align:left">ms</td>
+<td style="text-align:left">MY</td>
+<td style="text-align:left">Bahasa Melayu</td>
+</tr>
+</tbody>
+</table>
+<h4 id="附录4">附录4 </h4>
+<p>货币,调用接口时,使用货币代码 (Currency Code) 来指定货币</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">语言标识 (Locale)</th>
+<th style="text-align:left">货币代码 (Currency Code)</th>
+<th style="text-align:left">货币符号 (Symbol)</th>
+<th style="text-align:left">显示名称 (Display Name)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>zh-CN</strong></td>
+<td style="text-align:left">CNY</td>
+<td style="text-align:left">¥</td>
+<td style="text-align:left">人民币 (Renminbi)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>zh-TW</strong></td>
+<td style="text-align:left">TWD</td>
+<td style="text-align:left">NT$</td>
+<td style="text-align:left">新台币 (New Taiwan Dollar)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>zh-HK</strong></td>
+<td style="text-align:left">HKD</td>
+<td style="text-align:left">HK$</td>
+<td style="text-align:left">港币 (Hong Kong Dollar)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>en-US</strong></td>
+<td style="text-align:left">USD</td>
+<td style="text-align:left">$</td>
+<td style="text-align:left">美元 (US Dollar)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>en-GB</strong></td>
+<td style="text-align:left">GBP</td>
+<td style="text-align:left">£</td>
+<td style="text-align:left">英镑 (British Pound)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>en-MY</strong></td>
+<td style="text-align:left">MYR</td>
+<td style="text-align:left">RM</td>
+<td style="text-align:left">马来西亚林吉特 (Malaysian Ringgit)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>ja-JP</strong></td>
+<td style="text-align:left">JPY</td>
+<td style="text-align:left">¥</td>
+<td style="text-align:left">日元 (Japanese Yen)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>ko-KR</strong></td>
+<td style="text-align:left">KRW</td>
+<td style="text-align:left">₩</td>
+<td style="text-align:left">韩元 (South Korean Won)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>vi-VN</strong></td>
+<td style="text-align:left">VND</td>
+<td style="text-align:left">₫</td>
+<td style="text-align:left">越南盾 (Vietnamese Dong)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>th-TH</strong></td>
+<td style="text-align:left">THB</td>
+<td style="text-align:left">฿</td>
+<td style="text-align:left">泰铢 (Thai Baht)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>id-ID</strong></td>
+<td style="text-align:left">IDR</td>
+<td style="text-align:left">Rp</td>
+<td style="text-align:left">印尼盾 (Indonesian Rupiah)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>ms-MY</strong></td>
+<td style="text-align:left">MYR</td>
+<td style="text-align:left">RM</td>
+<td style="text-align:left">马来西亚林吉特 (Malaysian Ringgit)</td>
 </tr>
 </tbody>
 </table>
