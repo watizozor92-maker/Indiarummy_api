@@ -1,13 +1,13 @@
 ### API 接口说明
 
-api地址 https://xyule.cyou:7002/
+api地址 https://api.kjasdakls.shop/
 
 ##### 申请到的ApiKey
   
 ```json
 agency_uid: "agency10000"
 api_key: "qa/Oc5kikI5BfM81BusHbKeSDVeLQBvsfUyaLzPsA+E="
-api_url : "https://xyule.cyou:7002/"
+api_url : "https://api.kjasdakls.shop/"
 ```
 >   **提示: api_key 用于后续 API请求对payload 内容加解密,请妥善保管**
 
@@ -233,7 +233,7 @@ payload: 使用 AES-256-ECB 加密算法 并使用base64 对加密内容进行�
 PHP代码示例:
 ```php
 //加密
-$API_URL = "https://api.platform.com/game/createuser"           //API 地址
+$API_URL = "https://api.kjasdakls.shop/game/createuser"           //API 地址
 $agency_uid = 'agency10000';                                    //商户号
 $timestamp = round(microtime(true) * 1000);                     //时间戳
 $payload = [    
