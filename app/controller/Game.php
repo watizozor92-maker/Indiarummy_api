@@ -344,7 +344,7 @@ class Game extends BaseController
             'timestamp' => Util::getTimestampMs(),
             'account' => $user_code,
             'credit_amount' => $this->request->get('coin', 696),
-            'currency_code' => '$',
+            'currency_code' => 'CNY',
             'language' => 'en',
         ];
         $apikey = $this->getAgentApikey($data['agency_uid']);
@@ -480,7 +480,7 @@ class Game extends BaseController
             'account' => $user_code,
             'game_id' => $this->request->get('gameid', 696),
             'credit_amount' => 100000,
-            'currency_code' => 'cny',
+            'currency_code' => 'CNY',
             'language' => 'en',
             'callback_url' => $this->request->get('callback', 'https://api.kjasdakls.shop/game/handleGameRecordtest'),
         ];
