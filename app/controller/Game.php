@@ -62,13 +62,19 @@ class Game extends BaseController
         if($this->request->isPost())
         {
             $agency_uid = $this->request->post('agency_uid', "");
-            $post_param =  $this->request->post();
+            $request_method = 'POST';
         }
         else
         {
             $agency_uid = $this->request->get('agency_uid', "");
-            $post_param =  $this->request->get();
+            $request_method = 'GET';
         }
+
+        Log::write('[applykey] '.json_encode([
+            'agency_uid' => $agency_uid,
+            'method' => $request_method,
+            'ip' => $this->ip,
+        ], JSON_UNESCAPED_UNICODE), 'notice');
         
         if(empty($agency_uid))
         {
@@ -174,10 +180,10 @@ class Game extends BaseController
             return $this->backErr('Invalid channel info ', Game::ERROR_CODE_INVALID_CHANNEL_INFO, true);
         }
         //AES解密
-        Log::write('payload:'. $payload);
-        Log::write('apikey:'. $apikey);
+        // Log::write('payload:'. $payload);
+        // Log::write('apikey:'. $apikey);
         $payload = AESCrypto::decrypt_ecb($payload, $apikey);
-        Log::write('decrypt payload:'. $payload);        
+        // Log::write('decrypt payload:'. $payload);        
         $payloadArr = json_decode($payload, true);
         if(empty($payloadArr))
         {
@@ -1151,10 +1157,10 @@ class Game extends BaseController
             'game_type' => 'slots',//暂时写死
         ];
        
-        $cacheKey = md5($token.time());            
+        $cacheKey = md5($token.time());
         //有效时间5分钟
         $this->redis->set("GAME_LAUNCH:".$cacheKey, json_encode($data), Game::EXPIRE_TIME);   
-        $this->redis->hset("GAME_SESSION:TOKEN", $token, $cacheKey);   
+        $this->redis->hset("GAME_SESSION:TOKEN", $token, $cacheKey);
 
         #保存uid
         $uid = $this->getUserUID($agency_uid, $user_code);
@@ -1209,7 +1215,7 @@ class Game extends BaseController
             'nickname' => $username,
         ];
         // Log::write('the url:'. Env::get('SWOOLE_SERVER_API'));
-        Log::write('data:'. json_encode($data));
+        // Log::write('data:'. json_encode($data));
         return curlGet(Env::get('SWOOLE_SERVER_API').'/game/account/registerchannel?'.http_build_query($data, '', '&'));
     }
 

@@ -30,7 +30,7 @@ return [
             // 用户名
             'username'        => env('database.username', 'root'),
             // 密码
-            'password'        => env('database.password', '689e8dd00cd6c474'),
+            'password'        => env('database.password', 'dabing2026'),
             // 端口
             'hostport'        => env('database.hostport', '3306'),
             // 数据库编码默认采用utf8
