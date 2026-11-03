@@ -57,7 +57,7 @@ class Game extends BaseController
         exit(1);
     }
     //申请APIKey
-    public function applykey()
+    public function applykey20261103()
     {
         if($this->request->isPost())
         {
