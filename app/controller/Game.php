@@ -480,7 +480,7 @@ class Game extends BaseController
             'account' => $user_code,
             'game_id' => $this->request->get('gameid', 696),
             'credit_amount' => 100000,
-            'currency_code' => 'en',
+            'currency_code' => 'cny',
             'language' => 'en',
             'callback_url' => $this->request->get('callback', 'https://api.kjasdakls.shop/game/handleGameRecordtest'),
         ];
